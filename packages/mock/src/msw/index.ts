@@ -76,19 +76,18 @@ export const generateMSW = (
   const isTextPlain = response.contentTypes.includes('text/plain');
   const isReturnHttpResponse = value && value !== 'undefined';
 
-  const returnType = response.definition.success;
   const functionName = `get${pascal(operationId)}Mock`;
   const handlerName = `get${pascal(operationId)}MockHandler`;
 
   const handlerImplementation = `
-export const ${handlerName} = (${isReturnHttpResponse && !isTextPlain ? `overrideResponse?: ${returnType}` : ''}) => {
+export const ${handlerName} = (${isReturnHttpResponse && !isTextPlain ? `overrideResponse: any = {}` : ''}) => {
   return http.${verb}('${route}', async () => {
     await delay(${getDelay(override, !isFunction(mock) ? mock : undefined)});
     return new HttpResponse(${
       isReturnHttpResponse
         ? isTextPlain
           ? `${functionName}()`
-          : `JSON.stringify(overrideResponse ? overrideResponse : ${functionName}())`
+          : `JSON.stringify(overrideResponse.length ? overrideResponse : ${functionName}())`
         : null
     },
       {
@@ -104,7 +103,7 @@ export const ${handlerName} = (${isReturnHttpResponse && !isTextPlain ? `overrid
   return {
     implementation: {
       function: isReturnHttpResponse
-        ? `export const ${functionName} = (${isResponseOverridable ? `overrideResponse: any = {}` : ''}): ${returnType} => (${value})\n\n`
+        ? `export const ${functionName} = (${isResponseOverridable ? `overrideResponse: any = {}` : ''}) => (${value})\n\n`
         : '',
       handlerName: handlerName,
       handler: handlerImplementation,
